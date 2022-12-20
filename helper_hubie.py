@@ -6,7 +6,9 @@ Created on Tue Nov 15 13:53:55 2022
 @author: tedwards
 """
 import pandas as pd
-import numpy as np
+from requests import get
+from bs4 import BeautifulSoup
+#import numpy as np
 
 full_team_names = ['ATLANTA HAWKS', 'BOSTON CELTICS', 'BROOKLYN NETS', 'CHICAGO BULLS',
                    'CHARLOTTE HORNETS', 'CLEVELAND CAVALIERS', 'DALLAS MAVERICKS', 'DENVER NUGGETS',
@@ -19,12 +21,6 @@ full_team_names = ['ATLANTA HAWKS', 'BOSTON CELTICS', 'BROOKLYN NETS', 'CHICAGO 
 abbreviated_team_names = ['ATL', 'BOS', 'BRK', 'CHI', 'CHO', 'CLE', 'DAL', 'DEN', 'DET', 'GSW',
                           'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN', 'NOP', 'NYK',
                           'OKC', 'ORL', 'PHI', 'PHO', 'POR', 'SAC', 'SAS', 'TOR', 'UTA', 'WAS']
-#data = [full_team_names, abbreviated_team_names]
-#data = t(data)
-#numpy_array = np.array(data)
-#transpose = numpy_array.T
-#transpose_list = transpose.tolist()
-#df = pd.DataFrame(transpose, columns=['Full', 'Abbreviated'])
 
 def area(x1,y1,x2,y2,x3,y3):
     return abs((x1*(y2-y3)+(x2*(y3-y1))+(x3*(y1-y2)))/2.0)
@@ -67,19 +63,47 @@ def classify_hubie(xval, yval):
     return group
 
 def get_abbreviation(team_name):
-    #print(team_name)
-   # print("Above is what we are searching for.")
     for z in range(0, len(full_team_names)):
         curr_team = full_team_names[z]
-        #print(curr_team)
-        #print(z)
-        #print("We are looking through teams. Above is the team currently being viewed as well as the index.")
         if(curr_team == team_name):
-            #print("Found match")
-            #print(abbreviated_team_names[z])
             return abbreviated_team_names[z]
-    #return abbreviated_team_names[index]
+
+def get_unabbreviated(team_abbr):
+    for z in range(0, len(abbreviated_team_names)):
+        curr_team = abbreviated_team_names[z]
+        if(curr_team == team_abbr):
+            return full_team_names[z]
     
+def get_schedule(season, playoffs=False):
+    months = ['October', 'November', 'December', 'January', 'February', 'March',
+            'April', 'May', 'June']
+    if season==2020:
+        months = ['October-2019', 'November', 'December', 'January', 'February', 'March',
+                'July', 'August', 'September', 'October-2020']
+    df = pd.DataFrame()
+    for month in months:
+        r = get(f'https://www.basketball-reference.com/leagues/NBA_{season}_games-{month.lower()}.html')
+        print(r)
+        if r.status_code==200:
+            soup = BeautifulSoup(r.content, 'html.parser')
+            table = soup.find('table', attrs={'id': 'schedule'})
+            if table:
+                month_df = pd.read_html(str(table))[0]
+                df = pd.concat([df, month_df])
+        else:
+            print("Failing to obtain proper status code. ")
+
+    df = df.reset_index()
+
+    cols_to_remove = [i for i in df.columns if 'Unnamed' in i]
+    cols_to_remove += [i for i in df.columns if 'Notes' in i]
+    cols_to_remove += [i for i in df.columns if 'Start' in i]
+    cols_to_remove += [i for i in df.columns if 'Attend' in i]
+    cols_to_remove += [i for i in df.columns if 'Arena' in i]
+    cols_to_remove += ['index']
+    df = df.drop(cols_to_remove, axis=1)
+    df.columns = ['DATE', 'VISITOR', 'VISITOR_PTS', 'HOME', 'HOME_PTS']
+    return df
     
     
 """    
