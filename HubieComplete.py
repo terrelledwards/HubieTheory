@@ -13,11 +13,11 @@ well from 2 out of 3 of his projected zones onto an NBA basketball court.
 
 from basketball_reference_scraper.teams import get_roster_stats, get_roster
 from basketball_reference_scraper.shot_charts import get_shot_chart
-#from basketball_reference_scraper.seasons import get_schedule, get_standings
+from basketball_reference_scraper.seasons import get_schedule, get_standings
 #import matplotlib.pyplot as plt
 from BasketballConstants import Constant
 import re
-from helper_hubie import get_abbreviation, classify_hubie, get_schedule
+from helper_hubie import get_abbreviation, get_unabbreviated, classify_hubie#, get_schedule
 import pandas as pd
 from datetime import datetime, timedelta
 import time
@@ -119,7 +119,7 @@ Then, we loop through the roster. In addition, we also want to loop through the 
 """
 
 for z in range(0, len(teams)):
-    curr_team_games = latest_schedule[((latest_schedule.VISITOR == teams[z]) | (latest_schedule.HOME == teams[z])) & (latest_schedule.DATE < (datetime.now()-timedelta(days=1)))]
+    curr_team_games = latest_schedule[((latest_schedule.VISITOR == get_unabbreviated(teams[z])) | (latest_schedule.HOME == get_unabbreviated(teams[z]))) & (latest_schedule.DATE < (datetime.now()-timedelta(days=1)))]
     #curr_team = get_abbreviation(east_teams[z].upper())
     curr_team = teams[z]
     print(curr_team)
@@ -134,7 +134,8 @@ for z in range(0, len(teams)):
     for y in range(0, len(team_ros['PLAYER'])):
         #curr_player_examining = team_roster.PLAYER[y]
         print(team_ros.PLAYER[y])
-        #This regex is required because there are sometimes 
+        #This regex is required because there are sometimes weird spaces or notation for different contracts 
+        #Only players that appear in the call get_roster will be recorded,
         curr_player = re.findall("^[^\(]+", team_ros.PLAYER[y])[0]
         if(curr_player[-1] == " "):
             curr_player = curr_player[:-1]
@@ -186,41 +187,42 @@ for z in range(0, len(teams)):
                     off_x_loc = re.findall('[\d]*[.][\d]+', off_shot_chart.loc[w, 'x'])
                     off_y_loc = re.findall('[\d]*[.][\d]+', off_shot_chart.loc[w, 'y'])
                     off_hubie_value = classify_hubie(((Constant.Y_MAX) - float(off_x_loc[0]) -1), float(off_y_loc[0]) + 1)
-            
-                    player_hubie_index = hubie_stats[hubie_stats.Player_Name == off_shooter].index[0]
                     
-                    if(off_hubie_value == 1):
-                        hubie_stats.Zone_1_Attempts[player_hubie_index] = hubie_stats.Zone_1_Attempts[player_hubie_index] + 1
-                        hubie_stats_team_avg_off.Zone_1_Attempts[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_1_Attempts[team_off_hubie_index] + 1
-                        z1a+=1
-                        if(result == 'MAKE'): 
-                            hubie_stats.Zone_1_Makes[player_hubie_index] = hubie_stats.Zone_1_Makes[player_hubie_index] + 1
-                            hubie_stats_team_avg_off.Zone_1_Makes[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_1_Makes[team_off_hubie_index] + 1
-                            z1m+=1
-                    if(off_hubie_value == 2):
-                        hubie_stats.Zone_2_Attempts[player_hubie_index] = hubie_stats.Zone_2_Attempts[player_hubie_index] + 1
-                        hubie_stats_team_avg_off.Zone_2_Attempts[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_2_Attempts[team_off_hubie_index] + 1
-                        z2a+=1
-                        if(result == 'MAKE'): 
-                            hubie_stats.Zone_2_Makes[player_hubie_index] = hubie_stats.Zone_2_Makes[player_hubie_index] + 1
-                            hubie_stats_team_avg_off.Zone_2_Makes[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_2_Makes[team_off_hubie_index] + 1
-                            z2m+=1
-                    if(off_hubie_value == 3):
-                        hubie_stats.Zone_3_Attempts[player_hubie_index] = hubie_stats.Zone_3_Attempts[player_hubie_index] + 1
-                        hubie_stats_team_avg_off.Zone_3_Attempts[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_3_Attempts[team_off_hubie_index] + 1
-                        z3a+=1
-                        if(result == 'MAKE'): 
-                            hubie_stats.Zone_3_Makes[player_hubie_index] = hubie_stats.Zone_3_Makes[player_hubie_index] + 1
-                            hubie_stats_team_avg_off.Zone_3_Makes[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_3_Makes[team_off_hubie_index] + 1
-                            z3m+=1
-                    if(off_hubie_value == 4):
-                        hubie_stats.Zone_4_Attempts[player_hubie_index] = hubie_stats.Zone_4_Attempts[player_hubie_index] + 1
-                        hubie_stats_team_avg_off.Zone_4_Attempts[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_4_Attempts[team_off_hubie_index] + 1
-                        z4a+=1
-                        if(result == 'MAKE'): 
-                            hubie_stats.Zone_4_Makes[player_hubie_index] = hubie_stats.Zone_4_Makes[player_hubie_index] + 1
-                            hubie_stats_team_avg_off.Zone_4_Makes[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_4_Makes[team_off_hubie_index] + 1
-                            z4m+=1
+                    shooter_in_roster = off_shooter in hubie_stats['Player_Name'].unique()
+                    if(shooter_in_roster == True):
+                        player_hubie_index = hubie_stats[hubie_stats.Player_Name == off_shooter].index[0]
+                        if(off_hubie_value == 1):
+                            hubie_stats.Zone_1_Attempts[player_hubie_index] = hubie_stats.Zone_1_Attempts[player_hubie_index] + 1
+                            hubie_stats_team_avg_off.Zone_1_Attempts[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_1_Attempts[team_off_hubie_index] + 1
+                            z1a+=1
+                            if(result == 'MAKE'): 
+                                hubie_stats.Zone_1_Makes[player_hubie_index] = hubie_stats.Zone_1_Makes[player_hubie_index] + 1
+                                hubie_stats_team_avg_off.Zone_1_Makes[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_1_Makes[team_off_hubie_index] + 1
+                                z1m+=1
+                        if(off_hubie_value == 2):
+                            hubie_stats.Zone_2_Attempts[player_hubie_index] = hubie_stats.Zone_2_Attempts[player_hubie_index] + 1
+                            hubie_stats_team_avg_off.Zone_2_Attempts[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_2_Attempts[team_off_hubie_index] + 1
+                            z2a+=1
+                            if(result == 'MAKE'): 
+                                hubie_stats.Zone_2_Makes[player_hubie_index] = hubie_stats.Zone_2_Makes[player_hubie_index] + 1
+                                hubie_stats_team_avg_off.Zone_2_Makes[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_2_Makes[team_off_hubie_index] + 1
+                                z2m+=1
+                        if(off_hubie_value == 3):
+                            hubie_stats.Zone_3_Attempts[player_hubie_index] = hubie_stats.Zone_3_Attempts[player_hubie_index] + 1
+                            hubie_stats_team_avg_off.Zone_3_Attempts[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_3_Attempts[team_off_hubie_index] + 1
+                            z3a+=1
+                            if(result == 'MAKE'): 
+                                hubie_stats.Zone_3_Makes[player_hubie_index] = hubie_stats.Zone_3_Makes[player_hubie_index] + 1
+                                hubie_stats_team_avg_off.Zone_3_Makes[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_3_Makes[team_off_hubie_index] + 1
+                                z3m+=1
+                        if(off_hubie_value == 4):
+                            hubie_stats.Zone_4_Attempts[player_hubie_index] = hubie_stats.Zone_4_Attempts[player_hubie_index] + 1
+                            hubie_stats_team_avg_off.Zone_4_Attempts[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_4_Attempts[team_off_hubie_index] + 1
+                            z4a+=1
+                            if(result == 'MAKE'): 
+                                hubie_stats.Zone_4_Makes[player_hubie_index] = hubie_stats.Zone_4_Makes[player_hubie_index] + 1
+                                hubie_stats_team_avg_off.Zone_4_Makes[team_off_hubie_index] = hubie_stats_team_avg_off.Zone_4_Makes[team_off_hubie_index] + 1
+                                z4m+=1
             if(w < len(def_shot_chart)):
                 if(pd.isna(def_shot_chart.loc[w, 'PLAYER']) == False):
                     result = def_shot_chart.loc[w, 'MAKE_MISS']
