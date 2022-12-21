@@ -7,6 +7,7 @@ Created on Tue Nov 15 13:53:55 2022
 """
 import pandas as pd
 from requests import get
+from datetime import datetime
 from bs4 import BeautifulSoup
 #import numpy as np
 
@@ -21,6 +22,11 @@ full_team_names = ['ATLANTA HAWKS', 'BOSTON CELTICS', 'BROOKLYN NETS', 'CHICAGO 
 abbreviated_team_names = ['ATL', 'BOS', 'BRK', 'CHI', 'CHO', 'CLE', 'DAL', 'DEN', 'DET', 'GSW',
                           'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN', 'NOP', 'NYK',
                           'OKC', 'ORL', 'PHI', 'PHO', 'POR', 'SAC', 'SAS', 'TOR', 'UTA', 'WAS']
+team_names = ['Atlanta Hawks', 'Boston Celtics', 'Brooklyn Nets', 'Chicago Bulls', 'Charlotte Hornets', 'Cleveland Cavaliers', 
+              'Dallas Mavericks', 'Denver Nuggets', 'Detroit Pistons', 'Golden State Warriors', 'Houston Rockets', 'Indiana Pacers',
+              'Los Angeles Clippers', 'Los Angeles Lakers', 'Memphis Grizzlies', 'Miami Heat', 'Milwuakee Bucks', 'Minnesota Timberwolves',
+              'New Orleans Pelicans', 'New York Knicks', 'Oklahoma City Thunder', 'Orlando Magic', 'Philidelphia 76ers', 'Phoenix Suns',
+              'Portland Trailblazers', 'Sacramento Kings', 'San Antonio Spurs', 'Toronto Raptors', 'Utah Jazz', 'Washington Wizards']
 
 def area(x1,y1,x2,y2,x3,y3):
     return abs((x1*(y2-y3)+(x2*(y3-y1))+(x3*(y1-y2)))/2.0)
@@ -72,7 +78,7 @@ def get_unabbreviated(team_abbr):
     for z in range(0, len(abbreviated_team_names)):
         curr_team = abbreviated_team_names[z]
         if(curr_team == team_abbr):
-            return full_team_names[z]
+            return team_names[z]
     
 def get_schedule(season, playoffs=False):
     months = ['October', 'November', 'December', 'January', 'February', 'March',
